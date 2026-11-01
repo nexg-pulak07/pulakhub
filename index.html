@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulak Hub | Live Projects, Tech News & System Updates</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+
+        /* Ambient Cyber-Dark Mesh Background */
+        body {
+            background-color: #070B14;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 45%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.12) 0px, transparent 40%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.8) 0px, transparent 100%);
+            background-attachment: fixed;
+            color: #94A3B8;
+        }
+
+        /* Glass Surface Effects */
+        .glass-surface {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-surface-elevated {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Smooth interactive card hover */
+        .hub-card {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .hub-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .hub-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 20px 40px -15px rgba(56, 189, 248, 0.22);
+        }
+        .hub-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Glowing Accent Buttons */
+        .glow-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .glow-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -60%; width: 20%; height: 200%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(30deg);
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .glow-btn:hover::after {
+            transform: translateX(350%) rotate(30deg);
+        }
+
+        /* News Ticker Bar */
+        @keyframes ticker-slide {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .live-ticker-track {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker-slide 28s linear infinite;
+        }
+        .live-ticker-track:hover {
+            animation-play-state: paused;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #070B14; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38BDF8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-slate-950">
+
+    <!-- ==================== 1. REAL-TIME TICKER & SYSTEM STATUS BAR ==================== -->
+    <div class="w-full bg-slate-950/95 border-b border-slate-800/80 px-4 py-2 sticky top-0 z-50 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 text-xs">
+            
+            <!-- Live Status & Ticker -->
+            <div class="flex items-center space-x-3 overflow-hidden flex-1 mr-2">
+                <span class="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-mono font-bold text-[10px] flex items-center gap-1.5 shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>ONLINE FEED</span>
+                </span>
+                
+                <div class="overflow-hidden relative w-full text-slate-300 font-mono text-[11px]">
+                    <div id="portalTicker" class="live-ticker-track">
+                        Pulak Chakma Live Hub &bull; Synchronized with Cloud Database &bull; Real-time software releases, project logs and articles &bull; Explore recent developments below!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Digital Clock & Quick Control -->
+            <div class="flex items-center space-x-3 shrink-0">
+                <div id="portalSystemClock" class="font-mono text-white text-[11px] font-bold bg-slate-900 border border-slate-800 px-3 py-1 rounded-xl shadow-inner">
+                    --:--:--
+                </div>
+                <button onclick="scrollToAdminPanel()" class="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-[#38BDF8] text-slate-400 hover:text-slate-950 border border-slate-800 hover:border-[#38BDF8] transition-all text-xs font-bold flex items-center gap-1.5" title="Open Admin Panel">
+                    <i class="fa-solid fa-gear text-[11px]"></i>
+                    <span class="hidden sm:inline">Admin</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. EDITORIAL HERO & CATEGORY BAR ==================== -->
+    <header class="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-4 space-y-6">
+        
+        <!-- Header Top Row -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-800/80 pb-6">
+            <div class="space-y-2">
+                <div class="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#38BDF8] bg-sky-500/10 border border-sky-500/25 px-3 py-1 rounded-full">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>BROADCASTING LIVE WORK</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+                    PULAK <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-blue-400 to-indigo-400">HUB</span>
+                </h1>
+                <p class="text-sm text-slate-400 max-w-xl font-serif leading-relaxed">
+                    A centralized real-time stream of latest web deployments, academic resources, hardware experiments, and tech insights.
+                </p>
+            </div>
+
+            <!-- Database Connection Pill -->
+            <div class="flex items-center gap-3">
+                <div class="glass-surface px-4 py-2 rounded-2xl flex items-center gap-3 text-xs border border-slate-800">
+                    <span id="dbSignalLight" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <div>
+                        <p class="text-[10px] text-slate-500 font-mono uppercase font-bold">DATABASE STATUS</p>
+                        <p id="dbSignalText" class="text-slate-200 font-bold">Initializing...</p>
+                    </div>
+                </div>
+                <button onclick="fetchFeeds(true)" class="p-3 rounded-2xl bg-slate-900 border border-slate-800 hover:border-[#38BDF8] text-slate-400 hover:text-[#38BDF8] transition shadow-md" title="Sync / Refresh Data">
+                    <i id="btnSyncIcon" class="fa-solid fa-arrows-rotate text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3 Filter Tabs (Projects, News, Updates) -->
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0" id="filterTabsContainer">
+                <button onclick="filterCategory('all', this)" class="cat-pill active-tab px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#38BDF8] text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.35)] flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>All Feeds</span>
+                    <span id="badgeCountAll" class="text-[10px] px-1.5 py-0.2 bg-slate-950/30 rounded-md font-mono">0</span>
+                </button>
+
+                <button onclick="filterCategory('project', this)" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-code text-sky-400"></i>
+                    <span>Projects</span>
+                    <span id="badgeCountProject" class="text-[10px] px-1.5 py-0.2 bg-slate-800 rounded-md font-mono">0</span>
+                </button>
+
+                <button onclick="filterCategory('news', this)" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-newspaper text-purple-400"></i>
+                    <span>News &amp; Logs</span>
+                    <span id="badgeCountNews" class="text-[10px] px-1.5 py-0.2 bg-slate-800 rounded-md font-mono">0</span>
+                </button>
+
+                <button onclick="filterCategory('update', this)" class="cat-pill px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bolt-lightning text-amber-400"></i>
+                    <span>Live Updates</span>
+                    <span id="badgeCountUpdate" class="text-[10px] px-1.5 py-0.2 bg-slate-800 rounded-md font-mono">0</span>
+                </button>
+            </div>
+
+            <div class="text-xs font-mono text-slate-500">
+                Displaying <span id="displayedCount" class="text-[#38BDF8] font-bold">0</span> records
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== 3. PORTAL FEED GRID ==================== -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex-1 space-y-8">
+        
+        <!-- Loading State -->
+        <div id="feedLoader" class="text-center py-20 space-y-3">
+            <i class="fa-solid fa-atom fa-spin text-4xl text-[#38BDF8]"></i>
+            <p class="text-slate-400 text-sm font-serif">Querying Supabase PostgreSQL cloud records...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="feedEmptyBox" class="hidden text-center py-20 space-y-4 glass-surface rounded-3xl p-10 border border-slate-800">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl shadow-inner">
+                <i class="fa-regular fa-folder-open"></i>
+            </div>
+            <h3 class="text-white font-bold text-lg font-serif">No Publications in this Section Yet</h3>
+            <p class="text-slate-400 text-xs max-w-md mx-auto leading-relaxed">
+                Connect your Supabase credentials or publish your first article/project from the editorial form below.
+            </p>
+        </div>
+
+        <!-- Feeds Grid -->
+        <div id="portalGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- ==================== 4. LIVE INTERACTIVE READER MODAL ==================== -->
+        <div id="readerModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col p-2 sm:p-6 transition-all duration-300">
+            <div class="w-full max-w-6xl mx-auto flex-1 flex flex-col glass-surface-elevated rounded-3xl overflow-hidden shadow-2xl">
+                <!-- Modal Top Navigation -->
+                <div class="px-5 py-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 truncate">
+                        <span id="modalBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/20 text-sky-400 uppercase tracking-wider">PROJECT</span>
+                        <h3 id="modalTitle" class="text-sm sm:text-base font-bold text-white truncate font-serif">Interactive Live Preview</h3>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <a id="modalExternalBtn" href="#" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-sky-400 font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            <span>Open URL</span>
+                        </a>
+                        <button onclick="closeReaderModal()" class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 transition flex items-center justify-center">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Interactive Iframe -->
+                <div class="flex-1 bg-slate-950 relative">
+                    <iframe id="modalIframe" src="" class="w-full h-full border-0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================
+             5. ADMIN EDITORIAL CONTROL & SUPABASE CONNECTOR (BELOW)
+             ================================================================= -->
+        <section id="adminPortalControl" class="mt-20 pt-10 border-t border-slate-800/80 space-y-6">
+            
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-fingerprint text-[#38BDF8]"></i>
+                        <span>Editorial Control Room</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Publish new projects, announce live updates, or configure database</p>
+                </div>
+
+                <div id="adminStateBadge" class="text-xs font-mono px-3.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+                    <i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Locked
+                </div>
+            </div>
+
+            <!-- A. Dynamic Auth Box (No hardcoded default password) -->
+            <div id="adminLockBox" class="glass-surface rounded-3xl p-6 sm:p-8 max-w-md mx-auto border border-slate-800 text-center space-y-4 shadow-2xl">
+                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-[#38BDF8] flex items-center justify-center text-xl mx-auto shadow-inner">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                
+                <h3 class="text-base font-bold text-white">Admin Authentication</h3>
+                <p id="lockBoxDescription" class="text-xs text-slate-400 leading-relaxed">
+                    Set or enter your private Master Key to unlock the publishing engine.
+                </p>
+
+                <form onsubmit="handleAuthSubmit(event)" class="space-y-3 pt-2 text-left">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1" id="labelAuthInput">Enter Master Key</label>
+                        <input type="password" id="authInputKey" required placeholder="Type your security key..." class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm outline-none focus:border-[#38BDF8] transition">
+                    </div>
+
+                    <div id="authNotice" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl text-center">
+                        Key does not match!
+                    </div>
+
+                    <button type="submit" id="btnAuthAction" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/20">
+                        Unlock Control Room
+                    </button>
+                </form>
+            </div>
+
+            <!-- B. Authenticated Editor Panel (Unlocked) -->
+            <div id="adminWorkpanel" class="hidden space-y-6">
+                
+                <!-- Admin Header & Logout -->
+                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs text-emerald-400">
+                    <span class="flex items-center gap-2 font-bold">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Admin Session Active</span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetAdminKey()" class="px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white font-bold transition text-[11px]">
+                            Change Master Key
+                        </button>
+                        <button onclick="lockAdminSession()" class="px-3 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 font-bold transition text-[11px]">
+                            Lock / Exit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Database Connector -->
+                <div class="glass-surface rounded-3xl p-6 border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-database text-sky-400"></i>
+                            <span>Supabase PostgreSQL Connector</span>
+                        </h3>
+                        <span class="text-[11px] text-slate-500 font-mono">Table: pulak_feeds</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-mono font-bold text-slate-300 mb-1">PROJECT_URL</label>
+                            <input type="url" id="inputSbUrl" placeholder="https://xyzcompany.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-white font-mono outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono font-bold text-slate-300 mb-1">ANON_PUBLIC_KEY</label>
+                            <input type="password" id="inputSbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-white font-mono outline-none focus:border-sky-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="button" onclick="saveDatabaseConfig()" class="px-5 py-2.5 bg-[#38BDF8] hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md">
+                            <i class="fa-solid fa-plug"></i>
+                            <span>Save &amp; Connect Cloud DB</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Publish Form -->
+                <form onsubmit="handlePublishRecord(event)" class="glass-surface rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-5">
+                    <div class="border-b border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2 font-serif">
+                            <i class="fa-solid fa-pen-nib text-[#38BDF8]"></i>
+                            <span>Publish to Feed Stream</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Items appear instantly in your live portal without code updates.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Category *</label>
+                            <select id="entryCategory" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs font-bold focus:border-[#38BDF8] outline-none">
+                                <option value="project">📂 Project Showcase</option>
+                                <option value="news">📰 Tech News / Blog</option>
+                                <option value="update">⚡ Live Progress Update</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Badge Text</label>
+                            <input type="text" id="entryBadge" placeholder="e.g. 🟢 LIVE, 🚀 V2.4, 📰 HOT" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs font-mono focus:border-[#38BDF8] outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Highlight</label>
+                            <select id="entryFeatured" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs focus:border-[#38BDF8] outline-none">
+                                <option value="false">Standard Feed Item</option>
+                                <option value="true">⭐ Highlight on Top</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Headline / Title (English) *</label>
+                            <input type="text" id="entryTitle" required placeholder="Project or Article Headline" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs focus:border-[#38BDF8] outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Title (Bengali / বাংলা)</label>
+                            <input type="text" id="entryTitleBn" placeholder="বাংলা শিরোনাম (ঐচ্ছিক)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs focus:border-[#38BDF8] outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Live Preview / Website URL</label>
+                            <input type="url" id="entryUrl" placeholder="https://your-site.vercel.app" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs font-mono focus:border-[#38BDF8] outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Tags (Comma-separated)</label>
+                            <input type="text" id="entryTags" placeholder="React, Python, IoT, Release" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs focus:border-[#38BDF8] outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Description / Article Summary *</label>
+                        <textarea id="entryDescription" rows="3" required placeholder="Write clear details about this project or announcement..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-xs resize-none focus:border-[#38BDF8] outline-none"></textarea>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" id="btnSubmitPost" class="glow-btn px-8 py-3 rounded-xl bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 text-slate-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/25 flex items-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>Publish to Feed</span>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== 6. FOOTER ==================== -->
+    <footer class="w-full border-t border-slate-800 bg-slate-950/90 py-6 text-center text-xs text-slate-500 font-serif">
+        <p>&copy; 2026 Pulak Chakma &bull; Real-time News, Projects &amp; Live Updates &bull; <a href="https://pulakchakma.dev.cv" target="_blank" class="text-[#38BDF8] hover:underline">pulakchakma.dev.cv</a></p>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toastBox" class="fixed bottom-6 right-6 z-[100] bg-[#38BDF8] text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 text-xs flex items-center space-x-2 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-sm"></i>
+        <span id="toastMsg">Updated!</span>
+    </div>
+
+    <!-- ==================== 7. JAVASCRIPT LOGIC ==================== -->
+    <script>
+        let sbClient = null;
+        let selectedCategory = 'all';
+        let feedRecords = [];
+
+        /* 1. Digital Clock */
+        function startSystemClock() {
+            function tick() {
+                const now = new Date();
+                const clock = document.getElementById("portalSystemClock");
+                if (clock) {
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const day = days[now.getDay()];
+                    let h = now.getHours();
+                    const m = String(now.getMinutes()).padStart(2, '0');
+                    const s = String(now.getSeconds()).padStart(2, '0');
+                    const ampm = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12 || 12;
+                    clock.innerText = `${day} ${h}:${m}:${s} ${ampm}`;
+                }
+            }
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        /* 2. Dynamic Authentication (No Hardcoded Default Password) */
+        function checkAuthStatus() {
+            const savedKey = localStorage.getItem("pulak_admin_key");
+            const isSessionActive = sessionStorage.getItem("pulak_session_active") === "true";
+            const lockBox = document.getElementById("adminLockBox");
+            const workPanel = document.getElementById("adminWorkpanel");
+            const stateBadge = document.getElementById("adminStateBadge");
+            const labelInput = document.getElementById("labelAuthInput");
+            const desc = document.getElementById("lockBoxDescription");
+
+            if (!savedKey) {
+                // First time setup
+                labelInput.innerText = "Create New Master Key";
+                desc.innerText = "No password exists yet. Create your private key now to secure this panel.";
+            } else {
+                labelInput.innerText = "Enter Master Key";
+                desc.innerText = "Enter your private security key to access the editorial engine.";
+            }
+
+            if (isSessionActive) {
+                lockBox.classList.add("hidden");
+                workPanel.classList.remove("hidden");
+                stateBadge.innerHTML = `<i class="fa-solid fa-lock-open text-emerald-400 mr-1.5"></i> Admin Unlocked`;
+                stateBadge.className = "text-xs font-mono px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400";
+            } else {
+                workPanel.classList.add("hidden");
+                lockBox.classList.remove("hidden");
+                stateBadge.innerHTML = `<i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Locked`;
+                stateBadge.className = "text-xs font-mono px-3.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400";
+            }
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById("authInputKey").value.trim();
+            const savedKey = localStorage.getItem("pulak_admin_key");
+            const notice = document.getElementById("authNotice");
+
+            if (!savedKey) {
+                // Store first-time key
+                if (inputVal.length < 4) {
+                    alert("Please choose a security key with at least 4 characters!");
+                    return;
+                }
+                localStorage.setItem("pulak_admin_key", inputVal);
+                sessionStorage.setItem("pulak_session_active", "true");
+                notice.classList.add("hidden");
+                checkAuthStatus();
+                showNotification("Master Key created & session unlocked!");
+            } else {
+                if (inputVal === savedKey) {
+                    sessionStorage.setItem("pulak_session_active", "true");
+                    notice.classList.add("hidden");
+                    document.getElementById("authInputKey").value = "";
+                    checkAuthStatus();
+                    showNotification("Editorial control room unlocked!");
+                } else {
+                    notice.classList.remove("hidden");
+                }
+            }
+        }
+
+        function resetAdminKey() {
+            if (!confirm("Do you want to reset your Master Key? You will need to create a new one.")) return;
+            localStorage.removeItem("pulak_admin_key");
+            sessionStorage.removeItem("pulak_session_active");
+            checkAuthStatus();
+            showNotification("Key reset. Please create a new key.");
+        }
+
+        function lockAdminSession() {
+            sessionStorage.removeItem("pulak_session_active");
+            checkAuthStatus();
+            showNotification("Session locked.");
+        }
+
+        function scrollToAdminPanel() {
+            document.getElementById("adminPortalControl").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        /* 3. Database Initializer */
+        function initDatabaseConfig() {
+            const url = localStorage.getItem("pulak_sb_url") || "";
+            const key = localStorage.getItem("pulak_sb_key") || "";
+
+            document.getElementById("inputSbUrl").value = url;
+            document.getElementById("inputSbKey").value = key;
+
+            const light = document.getElementById("dbSignalLight");
+            const text = document.getElementById("dbSignalText");
+
+            if (url && key && window.supabase) {
+                try {
+                    sbClient = window.supabase.createClient(url, key);
+                    light.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+                    text.innerText = "Cloud Synced";
+                } catch (e) {
+                    light.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
+                    text.innerText = "Connection Failed";
+                }
+            } else {
+                light.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                text.innerText = "Setup Required in Admin";
+            }
+        }
+
+        function saveDatabaseConfig() {
+            const url = document.getElementById("inputSbUrl").value.trim();
+            const key = document.getElementById("inputSbKey").value.trim();
+
+            if (!url || !key) {
+                alert("Please provide both Supabase Project URL and Anon Public Key!");
+                return;
+            }
+
+            localStorage.setItem("pulak_sb_url", url);
+            localStorage.setItem("pulak_sb_key", key);
+
+            initDatabaseConfig();
+            showNotification("Database configuration saved!");
+            fetchFeeds(true);
+        }
+
+        /* 4. Query Feeds */
+        async function fetchFeeds(animate = false) {
+            const icon = document.getElementById("btnSyncIcon");
+            if (animate && icon) icon.classList.add("fa-spin");
+
+            const loader = document.getElementById("feedLoader");
+            const emptyBox = document.getElementById("feedEmptyBox");
+
+            loader.classList.remove("hidden");
+            emptyBox.classList.add("hidden");
+
+            if (!sbClient) initDatabaseConfig();
+
+            if (!sbClient) {
+                loader.classList.add("hidden");
+                emptyBox.classList.remove("hidden");
+                emptyBox.querySelector("h3").innerText = "Database Connection Needed";
+                emptyBox.querySelector("p").innerText = "Unlock the Admin Control Room below and enter your Supabase URL & Anon Key to view publications.";
+                if (animate && icon) icon.classList.remove("fa-spin");
+                return;
+            }
+
+            try {
+                const { data, error } = await sbClient
+                    .from('pulak_feeds')
+                    .select('*')
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                feedRecords = data || [];
+                updateCounts();
+
+                // Update ticker if data exists
+                if (feedRecords.length > 0) {
+                    const latestList = feedRecords.slice(0, 3).map(p => `[${p.category.toUpperCase()}] ${p.title}`).join(" • ");
+                    document.getElementById("portalTicker").innerText = latestList + " • Live Portal Synced!";
+                }
+
+                renderFeedCards();
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                emptyBox.classList.remove("hidden");
+                emptyBox.querySelector("h3").innerText = "Failed to Read Database";
+                emptyBox.querySelector("p").innerText = "Ensure table 'pulak_feeds' exists in Supabase. Details: " + (err.message || err);
+            } finally {
+                loader.classList.add("hidden");
+                if (animate && icon) {
+                    setTimeout(() => icon.classList.remove("fa-spin"), 400);
+                }
+            }
+        }
+
+        function updateCounts() {
+            document.getElementById("badgeCountAll").innerText = feedRecords.length;
+            document.getElementById("badgeCountProject").innerText = feedRecords.filter(p => p.category === 'project').length;
+            document.getElementById("badgeCountNews").innerText = feedRecords.filter(p => p.category === 'news').length;
+            document.getElementById("badgeCountUpdate").innerText = feedRecords.filter(p => p.category === 'update').length;
+        }
+
+        /* 5. Render Feed Cards */
+        function renderFeedCards() {
+            const grid = document.getElementById("portalGrid");
+            const emptyBox = document.getElementById("feedEmptyBox");
+            grid.innerHTML = "";
+
+            const filtered = feedRecords.filter(item => {
+                if (selectedCategory === 'all') return true;
+                return item.category === selectedCategory;
+            });
+
+            document.getElementById("displayedCount").innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                emptyBox.classList.remove("hidden");
+                return;
+            } else {
+                emptyBox.classList.add("hidden");
+            }
+
+            filtered.forEach(post => {
+                const card = document.createElement("div");
+                card.className = "hub-card glass-surface rounded-3xl p-6 border border-slate-800 flex flex-col justify-between";
+
+                // Category styling
+                let catBadge = "";
+                if (post.category === 'project') {
+                    catBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-code"></i> Project</span>`;
+                } else if (post.category === 'news') {
+                    catBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-400 border border-purple-500/30 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-newspaper"></i> News</span>`;
+                } else {
+                    catBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> Update</span>`;
+                }
+
+                const postDate = post.created_at ? new Date(post.created_at).toLocaleDateString() : "Recent";
+                const tags = Array.isArray(post.tags) ? post.tags : [];
+                const tagsHtml = tags.map(t => `<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">${t}</span>`).join(' ');
+
+                card.innerHTML = `
+                    <div class="space-y-3.5">
+                        <div class="flex items-center justify-between gap-2">
+                            ${catBadge}
+                            <span class="text-[11px] font-mono font-bold text-slate-300 bg-slate-900/90 border border-slate-800 px-2 py-0.5 rounded-md">${post.badge || '🟢 ACTIVE'}</span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base sm:text-lg font-bold text-white hover:text-[#38BDF8] transition-colors leading-snug cursor-pointer font-serif" onclick="openReaderModal('${post.preview_url || ''}', '${encodeURIComponent(post.title)}', '${post.category}')">
+                                ${post.title}
+                            </h3>
+                            ${post.title_bn ? `<p class="text-xs text-slate-400 mt-1 font-serif">${post.title_bn}</p>` : ''}
+                        </div>
+
+                        <p class="text-xs text-slate-300 leading-relaxed font-serif line-clamp-3">${post.description}</p>
+
+                        ${tags.length > 0 ? `<div class="flex flex-wrap gap-1 pt-1">${tagsHtml}</div>` : ''}
+                    </div>
+
+                    <div class="pt-4 mt-5 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[10px] font-mono text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${postDate}</span>
+                        
+                        <div class="flex items-center space-x-2">
+                            ${post.preview_url ? `
+                                <button onclick="openReaderModal('${post.preview_url}', '${encodeURIComponent(post.title)}', '${post.category}')" class="px-3.5 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500 text-sky-400 hover:text-slate-950 text-xs font-bold transition flex items-center gap-1.5 border border-sky-500/30 shadow-sm">
+                                    <i class="fa-solid fa-play text-[9px]"></i>
+                                    <span>Preview</span>
+                                </button>
+                                <a href="${post.preview_url}" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition" title="Open in new window">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                                </a>
+                            ` : ''}
+                            <button onclick="handleDeleteRecord(${post.id})" class="p-2 text-slate-600 hover:text-rose-400 transition" title="Delete from Supabase">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        /* 6. Category Filter Switching */
+        function filterCategory(cat, btn) {
+            selectedCategory = cat;
+            document.querySelectorAll(".cat-pill").forEach(el => {
+                el.className = "cat-pill px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-white flex items-center gap-2";
+            });
+
+            if (btn) {
+                btn.className = "cat-pill active-tab px-4 py-2 rounded-xl text-xs font-bold transition-all bg-[#38BDF8] text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.35)] flex items-center gap-2";
+            }
+            renderFeedCards();
+        }
+
+        /* 7. Publish Record */
+        async function handlePublishRecord(e) {
+            e.preventDefault();
+            const btn = document.getElementById("btnSubmitPost");
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Publishing...</span>`;
+
+            if (!sbClient) {
+                alert("Please connect to Supabase first!");
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Publish to Feed</span>`;
+                return;
+            }
+
+            const rawTags = document.getElementById("entryTags").value;
+            const tags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
+
+            const payload = {
+                category: document.getElementById("entryCategory").value,
+                badge: document.getElementById("entryBadge").value.trim() || "🟢 ACTIVE",
+                is_featured: document.getElementById("entryFeatured").value === "true",
+                title: document.getElementById("entryTitle").value.trim(),
+                title_bn: document.getElementById("entryTitleBn").value.trim() || null,
+                preview_url: document.getElementById("entryUrl").value.trim() || null,
+                tags: tags,
+                description: document.getElementById("entryDescription").value.trim()
+            };
+
+            try {
+                const { error } = await sbClient
+                    .from('pulak_feeds')
+                    .insert([payload]);
+
+                if (error) throw error;
+
+                showNotification("Post published successfully!");
+                document.getElementById("entryTitle").value = "";
+                document.getElementById("entryTitleBn").value = "";
+                document.getElementById("entryUrl").value = "";
+                document.getElementById("entryTags").value = "";
+                document.getElementById("entryDescription").value = "";
+
+                await fetchFeeds();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                alert("Publish failed: " + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Publish to Feed</span>`;
+            }
+        }
+
+        /* 8. Delete Record */
+        async function handleDeleteRecord(id) {
+            const isSessionActive = sessionStorage.getItem("pulak_session_active") === "true";
+            if (!isSessionActive) {
+                scrollToAdminPanel();
+                alert("Please authenticate in the control room to delete items!");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to permanently delete this record?")) return;
+
+            try {
+                const { error } = await sbClient
+                    .from('pulak_feeds')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+                showNotification("Item deleted from database!");
+                fetchFeeds();
+            } catch (err) {
+                alert("Delete failed: " + (err.message || err));
+            }
+        }
+
+        /* 9. Reader Modal */
+        function openReaderModal(url, encodedTitle, category) {
+            const modal = document.getElementById("readerModal");
+            const iframe = document.getElementById("modalIframe");
+            const titleEl = document.getElementById("modalTitle");
+            const extBtn = document.getElementById("modalExternalBtn");
+            const badge = document.getElementById("modalBadge");
+
+            if (!url) {
+                showNotification("No live URL provided for this entry.");
+                return;
+            }
+
+            titleEl.innerText = decodeURIComponent(encodedTitle);
+            badge.innerText = (category || 'FEED').toUpperCase();
+            iframe.src = url;
+            extBtn.href = url;
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeReaderModal() {
+            const modal = document.getElementById("readerModal");
+            const iframe = document.getElementById("modalIframe");
+            iframe.src = "";
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        /* 10. Notification Toast */
+        function showNotification(msg) {
+            const toast = document.getElementById("toastBox");
+            document.getElementById("toastMsg").innerText = msg;
+            toast.classList.remove("translate-y-24", "opacity-0");
+            setTimeout(() => {
+                toast.classList.add("translate-y-24", "opacity-0");
+            }, 2500);
+        }
+
+        // Initialize on load
+        window.addEventListener("DOMContentLoaded", () => {
+            startSystemClock();
+            checkAuthStatus();
+            initDatabaseConfig();
+            fetchFeeds();
+        });
+    </script>
+</body>
+</html>
