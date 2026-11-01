@@ -262,7 +262,7 @@
         </div>
 
         <!-- =================================================================
-             5. ADMIN EDITORIAL CONTROL & SUPABASE CONNECTOR (BELOW)
+             5. ADMIN EDITORIAL CONTROL & SUPABASE AUTHENTICATION
              ================================================================= -->
         <section id="adminPortalControl" class="mt-20 pt-10 border-t border-slate-800/80 space-y-6">
             
@@ -270,39 +270,45 @@
                 <div>
                     <h2 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
                         <i class="fa-solid fa-fingerprint text-[#38BDF8]"></i>
-                        <span>Editorial Control Room</span>
+                        <span>Supabase Admin Authentication</span>
                     </h2>
-                    <p class="text-xs text-slate-400">Publish new projects, announce live updates, or configure database</p>
+                    <p class="text-xs text-slate-400">Sign in with your official Supabase user account to publish and manage feeds</p>
                 </div>
 
                 <div id="adminStateBadge" class="text-xs font-mono px-3.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
-                    <i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Locked
+                    <i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Anonymous Reader
                 </div>
             </div>
 
-            <!-- A. Dynamic Auth Box (No hardcoded default password) -->
+            <!-- A. Supabase Email/Password Login Box -->
             <div id="adminLockBox" class="glass-surface rounded-3xl p-6 sm:p-8 max-w-md mx-auto border border-slate-800 text-center space-y-4 shadow-2xl">
                 <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-[#38BDF8] flex items-center justify-center text-xl mx-auto shadow-inner">
-                    <i class="fa-solid fa-shield-halved"></i>
+                    <i class="fa-solid fa-user-shield"></i>
                 </div>
                 
-                <h3 class="text-base font-bold text-white">Admin Authentication</h3>
+                <h3 class="text-base font-bold text-white">Admin Cloud Sign In</h3>
                 <p id="lockBoxDescription" class="text-xs text-slate-400 leading-relaxed">
-                    Set or enter your private Master Key to unlock the publishing engine.
+                    Enter your registered Supabase user email and password.
                 </p>
 
-                <form onsubmit="handleAuthSubmit(event)" class="space-y-3 pt-2 text-left">
+                <form onsubmit="handleSupabaseSignIn(event)" class="space-y-3 pt-2 text-left">
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1" id="labelAuthInput">Enter Master Key</label>
-                        <input type="password" id="authInputKey" required placeholder="Type your security key..." class="w-full px-4 py-3 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm outline-none focus:border-[#38BDF8] transition">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+                        <input type="email" id="authEmail" required placeholder="admin@pulakchakma.dev.cv" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm outline-none focus:border-[#38BDF8] transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Password</label>
+                        <input type="password" id="authPassword" required placeholder="••••••••••••" class="w-full px-4 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-white text-sm outline-none focus:border-[#38BDF8] transition">
                     </div>
 
                     <div id="authNotice" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl text-center">
-                        Key does not match!
+                        Authentication Failed!
                     </div>
 
-                    <button type="submit" id="btnAuthAction" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/20">
-                        Unlock Control Room
+                    <button type="submit" id="btnAuthAction" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        <span>Log In with Supabase</span>
                     </button>
                 </form>
             </div>
@@ -311,48 +317,31 @@
             <div id="adminWorkpanel" class="hidden space-y-6">
                 
                 <!-- Admin Header & Logout -->
-                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs text-emerald-400">
-                    <span class="flex items-center gap-2 font-bold">
+                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-400">
+                    <span class="flex items-center gap-2 font-bold truncate">
                         <i class="fa-solid fa-circle-check"></i>
-                        <span>Admin Session Active</span>
+                        <span>Logged in as: <strong id="adminUserEmail" class="text-white font-mono">--</strong></span>
                     </span>
-                    <div class="flex items-center gap-2">
-                        <button onclick="resetAdminKey()" class="px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:text-white font-bold transition text-[11px]">
-                            Change Master Key
-                        </button>
-                        <button onclick="lockAdminSession()" class="px-3 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 font-bold transition text-[11px]">
-                            Lock / Exit
-                        </button>
-                    </div>
+                    <button onclick="handleSupabaseSignOut()" class="px-4 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 font-bold transition text-xs flex items-center justify-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Sign Out</span>
+                    </button>
                 </div>
 
-                <!-- Database Connector -->
-                <div class="glass-surface rounded-3xl p-6 border border-slate-800 space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-database text-sky-400"></i>
-                            <span>Supabase PostgreSQL Connector</span>
-                        </h3>
-                        <span class="text-[11px] text-slate-500 font-mono">Table: pulak_feeds</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-mono font-bold text-slate-300 mb-1">PROJECT_URL</label>
-                            <input type="url" id="inputSbUrl" placeholder="https://xyzcompany.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-white font-mono outline-none focus:border-sky-500">
+                <!-- Database Connector Status -->
+                <div class="glass-surface rounded-3xl p-5 border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 text-[#38BDF8] flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-database"></i>
                         </div>
                         <div>
-                            <label class="block text-xs font-mono font-bold text-slate-300 mb-1">ANON_PUBLIC_KEY</label>
-                            <input type="password" id="inputSbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-white font-mono outline-none focus:border-sky-500">
+                            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Connected Project</h4>
+                            <p class="text-[11px] font-mono text-slate-400">zmgzgexbfaaedhynismu.supabase.co &bull; Table: pulak_feeds</p>
                         </div>
                     </div>
-
-                    <div class="flex justify-end pt-2">
-                        <button type="button" onclick="saveDatabaseConfig()" class="px-5 py-2.5 bg-[#38BDF8] hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md">
-                            <i class="fa-solid fa-plug"></i>
-                            <span>Save &amp; Connect Cloud DB</span>
-                        </button>
-                    </div>
+                    <span class="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold">
+                        RLS ENABLED
+                    </span>
                 </div>
 
                 <!-- Publish Form -->
@@ -442,6 +431,7 @@
         let sbClient = null;
         let selectedCategory = 'all';
         let feedRecords = [];
+        let currentAdminUser = null;
 
         /* 1. Digital Clock */
         function startSystemClock() {
@@ -463,80 +453,91 @@
             setInterval(tick, 1000);
         }
 
-        /* 2. Dynamic Authentication (No Hardcoded Default Password) */
-        function checkAuthStatus() {
-            const savedKey = localStorage.getItem("pulak_admin_key");
-            const isSessionActive = sessionStorage.getItem("pulak_session_active") === "true";
+        /* 2. Supabase Auth Management */
+        async function checkSupabaseAuthSession() {
+            if (!sbClient) return;
+
+            try {
+                const { data: { session } } = await sbClient.auth.getSession();
+                updateAuthUI(session ? session.user : null);
+
+                // Listen to live login/logout state changes
+                sbClient.auth.onAuthStateChange((_event, session) => {
+                    updateAuthUI(session ? session.user : null);
+                    renderFeedCards();
+                });
+            } catch (err) {
+                console.error("Auth session check error:", err);
+                updateAuthUI(null);
+            }
+        }
+
+        function updateAuthUI(user) {
+            currentAdminUser = user;
             const lockBox = document.getElementById("adminLockBox");
             const workPanel = document.getElementById("adminWorkpanel");
             const stateBadge = document.getElementById("adminStateBadge");
-            const labelInput = document.getElementById("labelAuthInput");
-            const desc = document.getElementById("lockBoxDescription");
+            const emailLabel = document.getElementById("adminUserEmail");
 
-            if (!savedKey) {
-                // First time setup
-                labelInput.innerText = "Create New Master Key";
-                desc.innerText = "No password exists yet. Create your private key now to secure this panel.";
-            } else {
-                labelInput.innerText = "Enter Master Key";
-                desc.innerText = "Enter your private security key to access the editorial engine.";
-            }
-
-            if (isSessionActive) {
+            if (user) {
                 lockBox.classList.add("hidden");
                 workPanel.classList.remove("hidden");
-                stateBadge.innerHTML = `<i class="fa-solid fa-lock-open text-emerald-400 mr-1.5"></i> Admin Unlocked`;
+                emailLabel.innerText = user.email || "Admin";
+                stateBadge.innerHTML = `<i class="fa-solid fa-user-check text-emerald-400 mr-1.5"></i> Authorized`;
                 stateBadge.className = "text-xs font-mono px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400";
             } else {
                 workPanel.classList.add("hidden");
                 lockBox.classList.remove("hidden");
-                stateBadge.innerHTML = `<i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Locked`;
+                stateBadge.innerHTML = `<i class="fa-solid fa-lock text-amber-400 mr-1.5"></i> Anonymous Reader`;
                 stateBadge.className = "text-xs font-mono px-3.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400";
             }
         }
 
-        function handleAuthSubmit(e) {
+        async function handleSupabaseSignIn(e) {
             e.preventDefault();
-            const inputVal = document.getElementById("authInputKey").value.trim();
-            const savedKey = localStorage.getItem("pulak_admin_key");
+            const email = document.getElementById("authEmail").value.trim();
+            const password = document.getElementById("authPassword").value;
             const notice = document.getElementById("authNotice");
+            const btn = document.getElementById("btnAuthAction");
 
-            if (!savedKey) {
-                // Store first-time key
-                if (inputVal.length < 4) {
-                    alert("Please choose a security key with at least 4 characters!");
-                    return;
-                }
-                localStorage.setItem("pulak_admin_key", inputVal);
-                sessionStorage.setItem("pulak_session_active", "true");
+            if (!sbClient) {
+                alert("Supabase client not initialized.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Verifying...</span>`;
+
+            try {
+                const { data, error } = await sbClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
                 notice.classList.add("hidden");
-                checkAuthStatus();
-                showNotification("Master Key created & session unlocked!");
-            } else {
-                if (inputVal === savedKey) {
-                    sessionStorage.setItem("pulak_session_active", "true");
-                    notice.classList.add("hidden");
-                    document.getElementById("authInputKey").value = "";
-                    checkAuthStatus();
-                    showNotification("Editorial control room unlocked!");
-                } else {
-                    notice.classList.remove("hidden");
-                }
+                document.getElementById("authPassword").value = "";
+                showNotification("Signed in successfully with Supabase Auth!");
+                updateAuthUI(data.user);
+            } catch (err) {
+                notice.classList.remove("hidden");
+                notice.innerText = err.message || "Invalid login credentials.";
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> <span>Log In with Supabase</span>`;
             }
         }
 
-        function resetAdminKey() {
-            if (!confirm("Do you want to reset your Master Key? You will need to create a new one.")) return;
-            localStorage.removeItem("pulak_admin_key");
-            sessionStorage.removeItem("pulak_session_active");
-            checkAuthStatus();
-            showNotification("Key reset. Please create a new key.");
-        }
-
-        function lockAdminSession() {
-            sessionStorage.removeItem("pulak_session_active");
-            checkAuthStatus();
-            showNotification("Session locked.");
+        async function handleSupabaseSignOut() {
+            if (!sbClient) return;
+            try {
+                await sbClient.auth.signOut();
+                showNotification("Logged out of Supabase.");
+                updateAuthUI(null);
+            } catch (err) {
+                alert("Sign out error: " + err.message);
+            }
         }
 
         function scrollToAdminPanel() {
@@ -545,11 +546,11 @@
 
         /* 3. Database Initializer */
         function initDatabaseConfig() {
-            const url = localStorage.getItem("pulak_sb_url") || "";
-            const key = localStorage.getItem("pulak_sb_key") || "";
+            const DEFAULT_SB_URL = "https://zmgzgexbfaaedhynismu.supabase.co";
+            const DEFAULT_SB_KEY = "sb_publishable_xhuUc7Q2gJdPkirq5eYV0g_oRhUGZBw";
 
-            document.getElementById("inputSbUrl").value = url;
-            document.getElementById("inputSbKey").value = key;
+            const url = localStorage.getItem("pulak_sb_url") || DEFAULT_SB_URL;
+            const key = localStorage.getItem("pulak_sb_key") || DEFAULT_SB_KEY;
 
             const light = document.getElementById("dbSignalLight");
             const text = document.getElementById("dbSignalText");
@@ -565,25 +566,8 @@
                 }
             } else {
                 light.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
-                text.innerText = "Setup Required in Admin";
+                text.innerText = "Credentials Needed";
             }
-        }
-
-        function saveDatabaseConfig() {
-            const url = document.getElementById("inputSbUrl").value.trim();
-            const key = document.getElementById("inputSbKey").value.trim();
-
-            if (!url || !key) {
-                alert("Please provide both Supabase Project URL and Anon Public Key!");
-                return;
-            }
-
-            localStorage.setItem("pulak_sb_url", url);
-            localStorage.setItem("pulak_sb_key", key);
-
-            initDatabaseConfig();
-            showNotification("Database configuration saved!");
-            fetchFeeds(true);
         }
 
         /* 4. Query Feeds */
@@ -602,8 +586,6 @@
             if (!sbClient) {
                 loader.classList.add("hidden");
                 emptyBox.classList.remove("hidden");
-                emptyBox.querySelector("h3").innerText = "Database Connection Needed";
-                emptyBox.querySelector("p").innerText = "Unlock the Admin Control Room below and enter your Supabase URL & Anon Key to view publications.";
                 if (animate && icon) icon.classList.remove("fa-spin");
                 return;
             }
@@ -619,7 +601,6 @@
                 feedRecords = data || [];
                 updateCounts();
 
-                // Update ticker if data exists
                 if (feedRecords.length > 0) {
                     const latestList = feedRecords.slice(0, 3).map(p => `[${p.category.toUpperCase()}] ${p.title}`).join(" • ");
                     document.getElementById("portalTicker").innerText = latestList + " • Live Portal Synced!";
@@ -630,7 +611,7 @@
                 console.error("Fetch Error:", err);
                 emptyBox.classList.remove("hidden");
                 emptyBox.querySelector("h3").innerText = "Failed to Read Database";
-                emptyBox.querySelector("p").innerText = "Ensure table 'pulak_feeds' exists in Supabase. Details: " + (err.message || err);
+                emptyBox.querySelector("p").innerText = "Details: " + (err.message || err);
             } finally {
                 loader.classList.add("hidden");
                 if (animate && icon) {
@@ -670,7 +651,6 @@
                 const card = document.createElement("div");
                 card.className = "hub-card glass-surface rounded-3xl p-6 border border-slate-800 flex flex-col justify-between";
 
-                // Category styling
                 let catBadge = "";
                 if (post.category === 'project') {
                     catBadge = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-code"></i> Project</span>`;
@@ -716,9 +696,11 @@
                                     <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                                 </a>
                             ` : ''}
-                            <button onclick="handleDeleteRecord(${post.id})" class="p-2 text-slate-600 hover:text-rose-400 transition" title="Delete from Supabase">
-                                <i class="fa-regular fa-trash-can text-xs"></i>
-                            </button>
+                            ${currentAdminUser ? `
+                                <button onclick="handleDeleteRecord(${post.id})" class="p-2 text-slate-600 hover:text-rose-400 transition" title="Delete from Supabase">
+                                    <i class="fa-regular fa-trash-can text-xs"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -746,8 +728,8 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Publishing...</span>`;
 
-            if (!sbClient) {
-                alert("Please connect to Supabase first!");
+            if (!currentAdminUser) {
+                alert("You must be logged in with a Supabase user account to publish!");
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Publish to Feed</span>`;
                 return;
@@ -793,10 +775,9 @@
 
         /* 8. Delete Record */
         async function handleDeleteRecord(id) {
-            const isSessionActive = sessionStorage.getItem("pulak_session_active") === "true";
-            if (!isSessionActive) {
+            if (!currentAdminUser) {
                 scrollToAdminPanel();
-                alert("Please authenticate in the control room to delete items!");
+                alert("Please log in with Supabase to delete items!");
                 return;
             }
 
@@ -859,8 +840,8 @@
         // Initialize on load
         window.addEventListener("DOMContentLoaded", () => {
             startSystemClock();
-            checkAuthStatus();
             initDatabaseConfig();
+            checkSupabaseAuthSession();
             fetchFeeds();
         });
     </script>
